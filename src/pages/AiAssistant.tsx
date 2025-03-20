@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import LoginModal from '@/components/LoginModal';
-import { SendHorizontal, Heart, ImagePlus, MicIcon, Dog, Cat, ArrowRight, Sparkle } from 'lucide-react';
+import { SendHorizontal, Heart, ImagePlus, MicIcon, Dog, Cat, ArrowRight, Sparkle, Brain } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { analyzeTextQuery, analyzePetImage } from '@/services/openaiService';
 
 interface Message {
   id: string;
@@ -27,8 +29,21 @@ const AiAssistant = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
+  const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  useEffect(() => {
+    // Check if API key exists in localStorage
+    const savedApiKey = localStorage.getItem('pawlingo_openai_key');
+    if (savedApiKey) {
+      setOpenaiApiKey(savedApiKey);
+    } else {
+      // Show API key input if no key is found
+      setShowApiKeyInput(true);
+    }
+  }, []);
   
   useEffect(() => {
     if (messages.length === 0) {
@@ -55,6 +70,13 @@ const AiAssistant = () => {
 
   const handleSendMessage = async () => {
     if ((!inputMessage.trim() && !selectedImage) || isProcessing) return;
+    
+    // Check for API key
+    if (!openaiApiKey) {
+      setShowApiKeyInput(true);
+      toast.error("Please enter your OpenAI API key to use the AI assistant");
+      return;
+    }
     
     let newMessage: Message;
     
@@ -87,14 +109,21 @@ const AiAssistant = () => {
     }
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
       let responseContent = '';
       
-      if (newMessage.type === 'image') {
-        responseContent = generateImageAnalysisResponse(newMessage.content);
+      if (newMessage.type === 'image' && imagePreview) {
+        // Process image + optional text with OpenAI
+        responseContent = await analyzePetImage(
+          imagePreview,
+          newMessage.content,
+          openaiApiKey
+        );
       } else {
-        responseContent = generateTextResponse(newMessage.content);
+        // Process text-only query with OpenAI
+        responseContent = await analyzeTextQuery(
+          newMessage.content,
+          openaiApiKey
+        );
       }
       
       const aiResponse: Message = {
@@ -108,7 +137,7 @@ const AiAssistant = () => {
       setMessages(prev => [...prev, aiResponse]);
     } catch (error) {
       console.error('Error processing message:', error);
-      toast.error('Sorry, there was an error processing your request.');
+      toast.error('Sorry, there was an error processing your request. Please check your API key and try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -194,6 +223,42 @@ const AiAssistant = () => {
         </p>
       </motion.div>
 
+      {showApiKeyInput && (
+        <div className="glass-card p-6 mb-8">
+          <h3 className="text-xl font-display font-semibold mb-4">Connect to OpenAI</h3>
+          <p className="text-sm text-pawlingo-muted mb-4">
+            To use the PawLingo AI Assistant, please enter your OpenAI API key. 
+            Your key will be stored in your browser's local storage and is only used for communicating with OpenAI's API.
+          </p>
+          <div className="flex flex-col md:flex-row gap-3">
+            <Input
+              type="password"
+              placeholder="Enter your OpenAI API key"
+              value={openaiApiKey}
+              onChange={(e) => setOpenaiApiKey(e.target.value)}
+              className="flex-1"
+            />
+            <Button 
+              onClick={() => {
+                if (openaiApiKey.trim()) {
+                  localStorage.setItem('pawlingo_openai_key', openaiApiKey);
+                  setShowApiKeyInput(false);
+                  toast.success("Successfully connected to OpenAI!");
+                } else {
+                  toast.error("Please enter a valid API key");
+                }
+              }}
+            >
+              <Brain className="mr-2 h-4 w-4" />
+              Connect
+            </Button>
+          </div>
+          <p className="text-xs text-pawlingo-muted mt-3">
+            You can get an API key by signing up at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-pawlingo-primary hover:underline">OpenAI's platform</a>
+          </p>
+        </div>
+      )}
+
       <Tabs defaultValue="chat" className="mb-8">
         <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
           <TabsTrigger value="chat" className="rounded-full">
@@ -249,7 +314,13 @@ const AiAssistant = () => {
                     className="h-20 rounded-lg border border-pawlingo-border"
                   />
                   <button 
-                    onClick={clearImage}
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setImagePreview(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                    }}
                     className="absolute top-1 right-1 bg-pawlingo-dark text-white rounded-full p-1"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -266,7 +337,12 @@ const AiAssistant = () => {
                     placeholder="Ask about your pet's behavior, health, or training..."
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
                     className="min-h-[80px] resize-none"
                   />
                 </div>
@@ -276,7 +352,7 @@ const AiAssistant = () => {
                     type="button"
                     variant="outline"
                     size="icon"
-                    onClick={triggerImageUpload}
+                    onClick={() => fileInputRef.current?.click()}
                     title="Upload pet image"
                   >
                     <ImagePlus className="h-4 w-4" />
@@ -285,7 +361,18 @@ const AiAssistant = () => {
                   <input
                     type="file"
                     ref={fileInputRef}
-                    onChange={handleImageUpload}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSelectedImage(file);
+                        
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setImagePreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
                     accept="image/*"
                     className="hidden"
                   />
@@ -300,6 +387,20 @@ const AiAssistant = () => {
                   </Button>
                 </div>
               </div>
+              
+              {!openaiApiKey && !showApiKeyInput && (
+                <div className="mt-3 text-center">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowApiKeyInput(true)}
+                    className="text-xs"
+                  >
+                    <Brain className="mr-1 h-3 w-3" />
+                    Connect to OpenAI
+                  </Button>
+                </div>
+              )}
               
               {!isAuthenticated && (
                 <div className="mt-3 text-center">
