@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import LoginModal from '@/components/LoginModal';
-import { SendHorizontal, Paw, ImagePlus, MicIcon, Dog, Cat, ArrowRight, Sparkle } from 'lucide-react';
+import { SendHorizontal, Heart, ImagePlus, MicIcon, Dog, Cat, ArrowRight, Sparkle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Message {
@@ -31,7 +30,6 @@ const AiAssistant = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Add initial greeting message when component mounts or user changes
   useEffect(() => {
     if (messages.length === 0) {
       const greeting: Message = {
@@ -47,7 +45,6 @@ const AiAssistant = () => {
     }
   }, [user]);
 
-  // Auto scroll to bottom when messages update
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -61,9 +58,7 @@ const AiAssistant = () => {
     
     let newMessage: Message;
     
-    // Create user message
     if (selectedImage) {
-      // Handle image message
       newMessage = {
         id: crypto.randomUUID(),
         content: inputMessage.trim() || "What can you tell me about this pet?",
@@ -73,7 +68,6 @@ const AiAssistant = () => {
         imageUrl: imagePreview || ''
       };
     } else {
-      // Handle text message
       newMessage = {
         id: crypto.randomUUID(),
         content: inputMessage.trim(),
@@ -83,22 +77,18 @@ const AiAssistant = () => {
       };
     }
     
-    // Update UI with user message
     setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
     setIsProcessing(true);
     
-    // Clear image after sending
     if (selectedImage) {
       setSelectedImage(null);
       setImagePreview(null);
     }
     
     try {
-      // Simulate AI processing with a delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Generate response based on the message content
       let responseContent = '';
       
       if (newMessage.type === 'image') {
@@ -107,7 +97,6 @@ const AiAssistant = () => {
         responseContent = generateTextResponse(newMessage.content);
       }
       
-      // Create AI response message
       const aiResponse: Message = {
         id: crypto.randomUUID(),
         content: responseContent,
@@ -116,7 +105,6 @@ const AiAssistant = () => {
         type: 'text'
       };
       
-      // Update UI with AI response
       setMessages(prev => [...prev, aiResponse]);
     } catch (error) {
       console.error('Error processing message:', error);
@@ -126,7 +114,6 @@ const AiAssistant = () => {
     }
   };
 
-  // Simple response generator for demo purposes
   const generateTextResponse = (userMessage: string): string => {
     const userMessageLower = userMessage.toLowerCase();
     
@@ -145,7 +132,6 @@ const AiAssistant = () => {
     }
   };
 
-  // Simple image analysis response generator for demo purposes
   const generateImageAnalysisResponse = (userPrompt: string): string => {
     const responses = [
       "Based on this image, your pet appears to be displaying playful behavior! Their relaxed body posture and bright eyes suggest they're content and comfortable in their environment. This is typical happy body language for a healthy pet.",
@@ -174,7 +160,6 @@ const AiAssistant = () => {
     if (file) {
       setSelectedImage(file);
       
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -212,7 +197,7 @@ const AiAssistant = () => {
       <Tabs defaultValue="chat" className="mb-8">
         <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
           <TabsTrigger value="chat" className="rounded-full">
-            <Paw className="mr-2 h-4 w-4" />
+            <Heart className="mr-2 h-4 w-4" />
             Chat with AI
           </TabsTrigger>
           <TabsTrigger value="guide" className="rounded-full">
