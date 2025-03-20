@@ -1,11 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Menu, X, LogIn, LogOut, User } from 'lucide-react';
+import { Menu, X, LogIn, LogOut, User, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from './LoginModal';
+import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -15,6 +18,7 @@ const Navbar = () => {
     isAuthenticated,
     logout
   } = useAuth();
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
@@ -23,6 +27,7 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
   const handleOpenLoginModal = () => {
     setIsLoginModalOpen(true);
     // Close mobile menu if open
@@ -30,12 +35,15 @@ const Navbar = () => {
       setIsMobileMenuOpen(false);
     }
   };
+
   const handleCloseLoginModal = () => {
     setIsLoginModalOpen(false);
   };
+
   const handleLogout = () => {
     logout();
   };
+
   return <>
       <motion.header initial={{
       y: -100,
@@ -56,9 +64,9 @@ const Navbar = () => {
                   <span className="text-2xl">🐾</span>
                 </div>
               </div>
-              <a href="#" className="font-display text-2xl text-pawlingo-dark">
+              <Link to="/" className="font-display text-2xl text-pawlingo-dark">
                 PawLingo
-              </a>
+              </Link>
             </div>
 
             {/* Desktop Navigation */}
@@ -95,9 +103,15 @@ const Navbar = () => {
                           {user.walletAddress.substring(0, 6)}...{user.walletAddress.substring(user.walletAddress.length - 4)}
                         </span>
                       </DropdownMenuItem>}
-                    <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                      <Link to="/profile">
+                        <User className="w-4 h-4 mr-2" /> Profile
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer">Pet Dashboard</DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">Settings</DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Settings className="w-4 h-4 mr-2" /> Settings
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-red-500" onClick={handleLogout}>
                       <LogOut className="w-4 h-4 mr-2" /> Sign Out
@@ -161,10 +175,16 @@ const Navbar = () => {
                           </div>}
                       </div>
                     </div>
-                    <Button className="w-full rounded-full" variant="outline" onClick={() => {
-                setIsMobileMenuOpen(false);
-              }}>
-                      Pet Dashboard
+                    <Button 
+                      className="w-full rounded-full" 
+                      variant="outline"
+                      asChild
+                      onClick={() => { setIsMobileMenuOpen(false); }}
+                    >
+                      <Link to="/profile">
+                        <User className="w-4 h-4 mr-2" />
+                        My Profile
+                      </Link>
                     </Button>
                     <Button className="w-full rounded-full bg-red-500/10 text-red-500 hover:bg-red-500/20" variant="outline" onClick={handleLogout}>
                       <LogOut className="w-4 h-4 mr-2" />

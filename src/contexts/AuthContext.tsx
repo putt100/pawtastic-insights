@@ -9,6 +9,18 @@ type User = {
   avatar?: string;
   walletAddress?: string;
   authProvider: 'google' | 'metamask' | 'email';
+  bio?: string;
+  petName?: string;
+  petType?: string;
+  petBreed?: string;
+};
+
+type ProfileUpdateData = {
+  name?: string;
+  bio?: string;
+  petName?: string;
+  petType?: string;
+  petBreed?: string;
 };
 
 interface AuthContextType {
@@ -17,6 +29,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loginWithGoogle: () => Promise<void>;
   loginWithMetaMask: () => Promise<void>;
+  updateUserProfile: (data: ProfileUpdateData) => Promise<void>;
   logout: () => void;
 }
 
@@ -58,7 +71,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: 'Pet Lover',
         email: 'pet.lover@example.com',
         avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70),
-        authProvider: 'google'
+        authProvider: 'google',
+        bio: '',
+        petName: '',
+        petType: '',
+        petBreed: ''
       };
       
       setUser(mockUser);
@@ -92,7 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: 'metamask_' + Math.random().toString(36).substring(2, 11),
         name: 'Crypto Pet Lover',
         walletAddress: walletAddress,
-        authProvider: 'metamask'
+        authProvider: 'metamask',
+        bio: '',
+        petName: '',
+        petType: '',
+        petBreed: ''
       };
       
       setUser(mockUser);
@@ -103,6 +124,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error('Failed to connect with MetaMask. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateUserProfile = async (data: ProfileUpdateData): Promise<void> => {
+    if (!user) {
+      toast.error('You must be logged in to update your profile.');
+      return;
+    }
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedUser = {
+        ...user,
+        ...data
+      };
+      
+      setUser(updatedUser);
+      localStorage.setItem('pawlingo_user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error('Profile update error:', error);
+      throw error;
     }
   };
 
@@ -119,7 +163,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading, 
         isAuthenticated: !!user, 
         loginWithGoogle, 
-        loginWithMetaMask, 
+        loginWithMetaMask,
+        updateUserProfile,
         logout 
       }}
     >
