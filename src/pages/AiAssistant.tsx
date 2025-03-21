@@ -21,7 +21,6 @@ const AiAssistant = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [openAiKey, setOpenAiKey] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -50,8 +49,6 @@ const AiAssistant = () => {
     const storedKey = localStorage.getItem('openai-api-key');
     if (storedKey) {
       setOpenAiKey(storedKey);
-    } else {
-      setShowApiKeyInput(true);
     }
   }, []);
 
@@ -121,16 +118,6 @@ const AiAssistant = () => {
     fileInputRef.current?.click();
   };
 
-  const saveApiKey = () => {
-    if (openAiKey.trim()) {
-      localStorage.setItem('openai-api-key', openAiKey);
-      setShowApiKeyInput(false);
-      toast.success('API key saved successfully');
-    } else {
-      toast.error('Please enter a valid API key');
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
       <Navbar />
@@ -170,30 +157,6 @@ const AiAssistant = () => {
             needs
           </motion.p>
         </div>
-
-        {showApiKeyInput && (
-          <motion.div 
-            className="mb-8 bg-gray-800 rounded-xl p-6"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <h2 className="text-xl mb-4">Enter your OpenAI API Key</h2>
-            <p className="text-gray-400 mb-4">
-              PawLingo AI uses OpenAI's GPT-4o model. Please enter your API key to continue.
-              Your key is stored locally in your browser and never sent to our servers.
-            </p>
-            <div className="flex gap-3">
-              <Input
-                type="password"
-                value={openAiKey}
-                onChange={(e) => setOpenAiKey(e.target.value)}
-                placeholder="sk-..."
-                className="flex-grow"
-              />
-              <Button onClick={saveApiKey}>Save Key</Button>
-            </div>
-          </motion.div>
-        )}
         
         {/* Messages Display Area */}
         {messages.length > 0 && (
@@ -289,7 +252,7 @@ const AiAssistant = () => {
                   handleSendMessage();
                 }
               }}
-              disabled={isLoading || (showApiKeyInput && !openAiKey)}
+              disabled={isLoading || !openAiKey}
             />
             
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-2">
@@ -298,7 +261,7 @@ const AiAssistant = () => {
                 variant="ghost"
                 className="rounded-full"
                 onClick={handleOpenFileDialog}
-                disabled={isLoading || (showApiKeyInput && !openAiKey)}
+                disabled={isLoading || !openAiKey}
                 aria-label="Upload image"
               >
                 <Camera className="w-5 h-5 text-gray-400" />
@@ -308,7 +271,7 @@ const AiAssistant = () => {
                 size="icon"
                 variant="ghost"
                 className="rounded-full"
-                disabled={isLoading || (showApiKeyInput && !openAiKey)}
+                disabled={isLoading || !openAiKey}
                 aria-label="Voice input"
               >
                 <Mic className="w-5 h-5 text-gray-400" />
@@ -318,7 +281,7 @@ const AiAssistant = () => {
                 size="icon"
                 className="rounded-full bg-white text-black hover:bg-gray-200"
                 onClick={handleSendMessage}
-                disabled={isLoading || (showApiKeyInput && !openAiKey)}
+                disabled={isLoading || !openAiKey}
                 aria-label="Send message"
               >
                 {isLoading ? (

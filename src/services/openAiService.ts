@@ -14,13 +14,18 @@ interface OpenAIResponse {
   }[];
 }
 
+// This should be replaced with your actual OpenAI API key
+const OPENAI_API_KEY = "YOUR_OPENAI_API_KEY";
+
 export const analyzeWithOpenAI = async (
   prompt: string,
   imageFile?: File,
   apiKey?: string
 ): Promise<string> => {
-  if (!apiKey) {
-    toast.error("Please enter your OpenAI API key to use the assistant");
+  const activeKey = OPENAI_API_KEY;
+  
+  if (!activeKey) {
+    toast.error("OpenAI API key is not configured");
     return "";
   }
 
@@ -53,7 +58,7 @@ export const analyzeWithOpenAI = async (
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
+        Authorization: `Bearer ${activeKey}`
       },
       body: JSON.stringify({
         model: "gpt-4o", // Using the latest model that supports vision
