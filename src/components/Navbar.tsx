@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Menu, X, LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,19 +39,25 @@ const Navbar = () => {
                 <span className="text-2xl">🐾</span>
               </div>
             </div>
-            <a href="#" className="font-display text-2xl text-pawlingo-dark">
+            <Link to="/" className="font-display text-2xl text-pawlingo-dark">
               PawLingo
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
+            <Link to="/" className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors">
+              Home
+            </Link>
             <a href="#features" className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors">
               Features
             </a>
             <a href="#how-it-works" className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors">
               How It Works
             </a>
+            <Link to="/ai-assistant" className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors">
+              AI Assistant
+            </Link>
             <a href="#testimonials" className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors">
               Testimonials
             </a>
@@ -90,6 +97,13 @@ const Navbar = () => {
           className="md:hidden bg-white shadow-lg rounded-b-2xl mt-2 overflow-hidden"
         >
           <div className="container mx-auto px-4 py-6 flex flex-col gap-6">
+            <Link 
+              to="/" 
+              className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
             <a 
               href="#features" 
               className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors py-2"
@@ -104,6 +118,13 @@ const Navbar = () => {
             >
               How It Works
             </a>
+            <Link 
+              to="/ai-assistant" 
+              className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              AI Assistant
+            </Link>
             <a 
               href="#testimonials" 
               className="text-pawlingo-dark/80 hover:text-pawlingo-dark transition-colors py-2"
