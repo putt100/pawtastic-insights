@@ -1,14 +1,29 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Send, Mic, Globe } from 'lucide-react';
+import { Plus, Send, Mic, Globe, Camera, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { analyzeWithOpenAI } from '../services/openAiService';
+import { toast } from 'sonner';
+
+interface Message {
+  sender: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 const AiAssistant = () => {
   const [userInput, setUserInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [openAiKey, setOpenAiKey] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Example suggestion chips
   const suggestionChips = [
@@ -30,25 +45,98 @@ const AiAssistant = () => {
     },
   ];
 
-  const handleSendMessage = () => {
-    if (userInput.trim()) {
-      console.log('Sending message:', userInput);
-      // In a real implementation, this would send the message to an API
+  // Check for stored API key on component mount
+  useEffect(() => {
+    const storedKey = localStorage.getItem('openai-api-key');
+    if (storedKey) {
+      setOpenAiKey(storedKey);
+    } else {
+      setShowApiKeyInput(true);
+    }
+  }, []);
+
+  // Auto scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if ((!userInput.trim() && !selectedFile) || isLoading) return;
+    
+    // Add user message to chat
+    const userMessage: Message = {
+      sender: 'user',
+      content: userInput || (selectedFile ? `[Uploaded image: ${selectedFile.name}]` : ''),
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+    
+    try {
+      // Call OpenAI API
+      const response = await analyzeWithOpenAI(userInput, selectedFile || undefined, openAiKey);
+      
+      if (response) {
+        // Add assistant response to chat
+        const assistantMessage: Message = {
+          sender: 'assistant',
+          content: response,
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+      toast.error('Failed to process your request. Please try again.');
+    } finally {
+      setIsLoading(false);
       setUserInput('');
+      setSelectedFile(null);
     }
   };
 
   const handleSuggestionClick = (suggestionText: string) => {
-    console.log('Suggestion clicked:', suggestionText);
-    // In a real implementation, this would process the suggestion
+    setUserInput(suggestionText);
+    // Auto-send after a short delay to give user time to see what's being sent
+    setTimeout(() => {
+      handleSendMessage();
+    }, 300);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleOpenFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+
+  const saveApiKey = () => {
+    if (openAiKey.trim()) {
+      localStorage.setItem('openai-api-key', openAiKey);
+      setShowApiKeyInput(false);
+      toast.success('API key saved successfully');
+    } else {
+      toast.error('Please enter a valid API key');
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
       <Navbar />
       
-      <main className="flex-grow container mx-auto px-4 py-12 max-w-4xl">
-        <div className="text-center mb-12 mt-8">
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+        <div className="text-center mb-8 mt-4">
           <div className="w-24 h-24 bg-gray-800 rounded-full mx-auto flex items-center justify-center mb-6">
             <img 
               src="/lovable-uploads/15fd4c01-4639-464a-9f94-2fbc4dbe1139.png" 
@@ -66,7 +154,7 @@ const AiAssistant = () => {
             PawLingo AI
           </motion.h1>
           
-          <div className="flex items-center justify-center gap-2 text-gray-400 mb-6">
+          <div className="flex items-center justify-center gap-2 text-gray-400 mb-4">
             <span>By pawlingo.xyz</span>
             <Globe className="w-4 h-4" />
           </div>
@@ -82,22 +170,105 @@ const AiAssistant = () => {
             needs
           </motion.p>
         </div>
+
+        {showApiKeyInput && (
+          <motion.div 
+            className="mb-8 bg-gray-800 rounded-xl p-6"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <h2 className="text-xl mb-4">Enter your OpenAI API Key</h2>
+            <p className="text-gray-400 mb-4">
+              PawLingo AI uses OpenAI's GPT-4o model. Please enter your API key to continue.
+              Your key is stored locally in your browser and never sent to our servers.
+            </p>
+            <div className="flex gap-3">
+              <Input
+                type="password"
+                value={openAiKey}
+                onChange={(e) => setOpenAiKey(e.target.value)}
+                placeholder="sk-..."
+                className="flex-grow"
+              />
+              <Button onClick={saveApiKey}>Save Key</Button>
+            </div>
+          </motion.div>
+        )}
         
-        {/* Suggestion Chips */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-          {suggestionChips.map((chip) => (
-            <motion.div
-              key={chip.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className="bg-gray-800 hover:bg-gray-700 rounded-lg p-6 cursor-pointer transition-colors"
-              onClick={() => handleSuggestionClick(chip.title)}
+        {/* Messages Display Area */}
+        {messages.length > 0 && (
+          <div className="mb-8 bg-gray-800 rounded-xl p-4 overflow-y-auto max-h-[500px]">
+            {messages.map((message, index) => (
+              <div 
+                key={index} 
+                className={`mb-4 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}
+              >
+                <div 
+                  className={`inline-block p-3 rounded-lg ${
+                    message.sender === 'user' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-700 text-gray-100'
+                  }`}
+                >
+                  {message.content}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+        
+        {messages.length === 0 && (
+          <>
+            {/* Suggestion Chips */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {suggestionChips.map((chip) => (
+                <motion.div
+                  key={chip.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className="bg-gray-800 hover:bg-gray-700 rounded-lg p-6 cursor-pointer transition-colors"
+                  onClick={() => handleSuggestionClick(chip.title)}
+                >
+                  <p className="text-gray-300">{chip.title}</p>
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
+        
+        {/* Selected File Preview */}
+        {selectedFile && (
+          <div className="mb-4 p-2 bg-gray-800 rounded-lg inline-flex items-center">
+            <img 
+              src={URL.createObjectURL(selectedFile)} 
+              alt="Selected pet" 
+              className="h-12 w-12 object-cover rounded mr-2" 
+            />
+            <span className="text-sm text-gray-300">{selectedFile.name}</span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="ml-2" 
+              onClick={() => setSelectedFile(null)}
             >
-              <p className="text-gray-300">{chip.title}</p>
-            </motion.div>
-          ))}
-        </div>
+              ✕
+            </Button>
+          </div>
+        )}
+        
+        {/* File Input (hidden) */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+          accept="image/*"
+        />
         
         {/* Chat Input */}
         <motion.div 
@@ -110,13 +281,15 @@ const AiAssistant = () => {
             <Input
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
-              placeholder="Ask anything"
+              placeholder="Ask about your pet or upload a picture"
               className="w-full bg-transparent border-0 text-white placeholder-gray-500 focus-visible:ring-0 pl-4 pr-24 py-6 text-lg"
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
                   handleSendMessage();
                 }
               }}
+              disabled={isLoading || (showApiKeyInput && !openAiKey)}
             />
             
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-2">
@@ -124,15 +297,18 @@ const AiAssistant = () => {
                 size="icon"
                 variant="ghost"
                 className="rounded-full"
-                aria-label="Add attachment"
+                onClick={handleOpenFileDialog}
+                disabled={isLoading || (showApiKeyInput && !openAiKey)}
+                aria-label="Upload image"
               >
-                <Plus className="w-5 h-5 text-gray-400" />
+                <Camera className="w-5 h-5 text-gray-400" />
               </Button>
               
               <Button
                 size="icon"
                 variant="ghost"
                 className="rounded-full"
+                disabled={isLoading || (showApiKeyInput && !openAiKey)}
                 aria-label="Voice input"
               >
                 <Mic className="w-5 h-5 text-gray-400" />
@@ -142,9 +318,14 @@ const AiAssistant = () => {
                 size="icon"
                 className="rounded-full bg-white text-black hover:bg-gray-200"
                 onClick={handleSendMessage}
+                disabled={isLoading || (showApiKeyInput && !openAiKey)}
                 aria-label="Send message"
               >
-                <Send className="w-5 h-5" />
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
               </Button>
             </div>
           </div>
