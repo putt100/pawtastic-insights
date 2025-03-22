@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage, useOpenAiService } from "@/services/openAiService";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Bot, Settings, MessageCircle, ArrowUp, Image, Loader2 } from "lucide-react";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar"; // This import is correct since we're back to the original code
 import { 
   Dialog,
   DialogContent,
