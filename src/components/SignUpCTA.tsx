@@ -3,8 +3,32 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const SignUpCTA = () => {
+  const { login, isAuthenticated } = useAuth();
+
+  const handleMetaMaskConnect = async () => {
+    if (!window.ethereum) {
+      alert('MetaMask is not installed. Please install MetaMask to continue.');
+      return;
+    }
+    
+    try {
+      await login('metamask');
+    } catch (error) {
+      console.error('MetaMask connection failed', error);
+    }
+  };
+
+  const handleGoogleConnect = async () => {
+    try {
+      await login('google');
+    } catch (error) {
+      console.error('Google login failed', error);
+    }
+  };
+
   return (
     <section className="py-20 relative overflow-hidden">
       {/* Background Decoration */}
@@ -55,7 +79,12 @@ const SignUpCTA = () => {
                   </div>
                   <h3 className="text-xl font-display text-pawlingo-dark mb-3">Web3 Integration</h3>
                   <p className="text-pawlingo-muted mb-4">Connect with MetaMask to access blockchain pet profiles and exclusive web3 features.</p>
-                  <Button variant="outline" className="rounded-full border-pawlingo-primary/30 text-pawlingo-primary hover:bg-pawlingo-primary/10 transition-all">
+                  <Button 
+                    onClick={handleMetaMaskConnect} 
+                    disabled={isAuthenticated}
+                    variant="outline" 
+                    className="rounded-full border-pawlingo-primary/30 text-pawlingo-primary hover:bg-pawlingo-primary/10 transition-all"
+                  >
                     Connect MetaMask
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
@@ -69,7 +98,11 @@ const SignUpCTA = () => {
                   </div>
                   <h3 className="text-xl font-display text-pawlingo-dark mb-3">Standard Sign-Up</h3>
                   <p className="text-pawlingo-muted mb-4">Create an account instantly with Google or your email to start understanding your pet.</p>
-                  <Button className="rounded-full bg-gradient-to-r from-pawlingo-primary to-pawlingo-secondary text-white hover:shadow-lg hover:shadow-pawlingo-primary/20 transition-all">
+                  <Button 
+                    onClick={handleGoogleConnect}
+                    disabled={isAuthenticated}
+                    className="rounded-full bg-gradient-to-r from-pawlingo-primary to-pawlingo-secondary text-white hover:shadow-lg hover:shadow-pawlingo-primary/20 transition-all"
+                  >
                     Sign Up with Google 
                     <ChevronRight className="ml-2 w-4 h-4" />
                   </Button>

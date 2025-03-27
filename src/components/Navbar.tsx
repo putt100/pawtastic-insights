@@ -3,7 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Menu, X, LogIn } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import { AuthButtons } from './auth/AuthButtons';
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -60,10 +67,7 @@ const Navbar = () => {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="outline" className="rounded-full border-pawlingo-primary/30 text-pawlingo-primary hover:text-pawlingo-primary hover:bg-pawlingo-primary/10 transition-all">
-              <LogIn className="w-4 h-4 mr-2" />
-              Sign In
-            </Button>
+            <AuthButtons />
             <Button className="rounded-full bg-gradient-to-r from-pawlingo-primary to-pawlingo-secondary text-white hover:shadow-lg hover:shadow-pawlingo-primary/20 transition-all">
               Try PawLingo Free
             </Button>
@@ -119,10 +123,7 @@ const Navbar = () => {
               FAQ
             </a>
             <div className="flex flex-col gap-3 pt-3 border-t border-pawlingo-light">
-              <Button variant="outline" className="w-full rounded-full border-pawlingo-primary/30 text-pawlingo-primary hover:text-pawlingo-primary hover:bg-pawlingo-primary/10 transition-all">
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign In
-              </Button>
+              <AuthButtons />
               <Button className="w-full rounded-full bg-gradient-to-r from-pawlingo-primary to-pawlingo-secondary text-white hover:shadow-lg hover:shadow-pawlingo-primary/20 transition-all">
                 Try PawLingo Free
               </Button>
